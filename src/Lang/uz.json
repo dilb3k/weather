@@ -1,0 +1,16 @@
+{
+    "current_weather": "Hozirgi ob-havo",
+    "temperature": "Harorat",
+    "wind_speed": "Shamol tezligi",
+    "humidity": "Namlik",
+    "pressure": "Bosim",
+    "uv_index": "UV Indeks",
+    "sunrise": "Quyosh chiqishi",
+    "sunset": "Quyosh botishi",
+    "hourly_forecast": "Bugungi soatlik prognoz",
+    "day_forecast": "3 kunlik prognoz",
+    "enter_city": "Shaharni kiriting",
+    "get_weather": "Ob-havo ma'lumotlarini oling",
+    "please_enter_city": "Ob-havo ma'lumotlarini olish uchun shaharga kiriting."
+  }
+  

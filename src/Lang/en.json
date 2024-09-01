@@ -1,0 +1,16 @@
+{
+    "current_weather": "Current Weather",
+    "temperature": "Temperature",
+    "wind_speed": "Wind Speed",
+    "humidity": "Humidity",
+    "pressure": "Pressure",
+    "uv_index": "UV Index",
+    "sunrise": "Sunrise",
+    "sunset": "Sunset",
+    "hourly_forecast": "Hourly Forecast for Today",
+    "day_forecast": "3-Day Forecast",
+    "enter_city": "Enter city",
+    "get_weather": "Get Weather",
+    "please_enter_city": "Please enter a city to get weather information."
+  }
+  
