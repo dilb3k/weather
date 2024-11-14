@@ -1,16 +1,17 @@
+// Weather.js
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { useTranslation } from 'react-i18next';
-import './i18n'; 
+import './i18n';
 
 function Weather() {
   const { t, i18n } = useTranslation();
-  const [city, setCity] = useState('Tashkent'); 
+  const [city, setCity] = useState('Tashkent');
   const [weather, setWeather] = useState(null);
 
-  // Fetch weather data when the component mounts or when the city changes
   useEffect(() => {
     fetchWeather(city);
   }, [city]);
@@ -85,69 +86,60 @@ function Weather() {
       backgroundImage: `url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLCUgnMytKbqV8SHo_4Ke5-1M_UNRJ-R8mYg&s')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
+      backdropFilter: 'blur(5px)',
     }}>
     
       <div className="absolute top-4 right-8 flex space-x-2">
         <button
           onClick={() => i18n.changeLanguage('en')}
-          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          className="px-4 py-2 bg-gray-500 text-white rounded-full hover:bg-gray-600 shadow-lg"
         >
           EN
         </button>
         <button
           onClick={() => i18n.changeLanguage('ru')}
-          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          className="px-4 py-2 bg-gray-500 text-white rounded-full hover:bg-gray-600 shadow-lg"
         >
           RU
         </button>
         <button
           onClick={() => i18n.changeLanguage('uz')}
-          className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+          className="px-4 py-2 bg-gray-500 text-white rounded-full hover:bg-gray-600 shadow-lg"
         >
           UZ
         </button>
       </div>
 
-
-      
       {weatherData ? (
-        <div className="mt-16 w-full max-w-2xl bg-slate-800 p-6 rounded-lg shadow-lg text-white font-medium" style={{
-           backgroundColor: 'rgba(167, 170, 203, 0.268)'
-        }}>
+        <div className="mt-16 w-full max-w-2xl p-3 rounded-lg shadow-2xl bg-gray-700 bg-opacity-70 text-white font-medium">
           <div className="text-center mb-5">
-          <div className='flex flex-col items-center mb-5 '>
-        <input
-          type="text"
-          placeholder={t('enter_city')}
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className=" p-2 rounded bg-gray-500 text-white w-[55%] focus:outline-none focus:ring-2 focus:ring-gray-600"
-        />
-        <button
-          onClick={handleClick}
-          className="mt-4 p-2 bg-gray-500 text-white font-medium rounded w-[55%] hover:bg-gray-600 transition-colors"
-        >
-          {t('get_weather')}
-        </button>
-      </div>
-            <h2 className="text-4xl font-bold">
-              {weatherData.country}, {weatherData.region}
-            </h2>
-            <p className="text-2xl mt-2">
-              {weatherData.temperature}°C - {weatherData.condition.text}
-            </p>
-            <img className="mx-auto mt-4 w-28" src={weatherData.condition.icon} alt="Weather Icon" />
+            <input
+              type="text"
+              placeholder={t('enter_city')}
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="p-2 rounded-full bg-gray-600 text-white w-[55%] focus:outline-none focus:ring-2 focus:ring-gray-400"
+            />
+            <button
+              onClick={handleClick}
+              className="mt-4 p-2 rounded-full bg-orange-500 text-white font-bold w-[55%] hover:bg-orange-600 transition-colors shadow-md"
+            >
+              {t('get_weather')}
+            </button>
+            <h2 className="text-4xl font-extrabold mt-4">{weatherData.country}, {weatherData.region}</h2>
+            <p className="text-3xl mt-2">{weatherData.temperature}°C - {weatherData.condition.text}</p>
+            <img className="mx-auto mt-6 w-32 h-32" src={weatherData.condition.icon} alt="Weather Icon" />
           </div>
 
           {weatherData.forecastday[0].hour ? (
-            <div className="mt-4">
-              <h3 className="text-2xl mb-4">{t('hourly_forecast')}</h3>
+            <div className="mt-6">
+              <h3 className="text-2xl font-semibold mb-4">{t('hourly_forecast')}</h3>
               <Slider {...slickSettings}>
                 {weatherData.forecastday[0].hour.map((hour, index) => (
-                  <div key={index} className="bg-gray-500 p-2 rounded text-center mb-7">
-                    <p className="text-lg">{new Date(hour.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    <img className="mx-auto" src={hour.condition.icon} alt="Hourly Forecast Icon" />
-                    <p className="text-xl">{hour.temp_c}°C</p>
+                  <div key={index} className="bg-gray-800 bg-opacity-75 p-4 rounded-lg text-center shadow-lg mx-2">
+                    <p className="text-lg font-bold">{new Date(hour.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    <img className="mx-auto w-16 h-16 mt-3" src={hour.condition.icon} alt="Hourly Forecast Icon" />
+                    <p className="text-xl font-bold">{hour.temp_c}°C</p>
                     <p>{hour.condition.text}</p>
                   </div>
                 ))}
@@ -155,37 +147,37 @@ function Weather() {
             </div>
           ) : null}
 
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="bg-gray-500 p-4 rounded text-center">
-              <p>{t('wind_speed')}</p>
-              <p className="text-xl">{weather.current.wind_kph} kph</p>
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            <div className="bg-gray-800 p-4 rounded-lg text-center shadow-lg">
+              <p className="font-semibold">{t('wind_speed')}</p>
+              <p className="text-2xl font-bold">{weather.current.wind_kph} kph</p>
             </div>
-            <div className="bg-gray-500 p-4 rounded text-center">
-              <p>{t('humidity')}</p>
-              <p className="text-xl">{weather.current.humidity}%</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-center shadow-lg">
+              <p className="font-semibold">{t('humidity')}</p>
+              <p className="text-2xl font-bold">{weather.current.humidity}%</p>
             </div>
-            <div className="bg-gray-500 p-4 rounded text-center">
-              <p>{t('pressure')}</p>
-              <p className="text-xl">{weather.current.pressure_mb} hPa</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-center shadow-lg">
+              <p className="font-semibold">{t('pressure')}</p>
+              <p className="text-2xl font-bold">{weather.current.pressure_mb} hPa</p>
             </div>
-            <div className="bg-gray-500 p-4 rounded text-center">
-              <p>{t('uv_index')}</p>
-              <p className="text-xl">{weather.current.uv}</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-center shadow-lg">
+              <p className="font-semibold">{t('uv_index')}</p>
+              <p className="text-2xl font-bold">{weather.current.uv}</p>
             </div>
-            <div className="bg-gray-500 p-4 rounded text-center col-span-2">
-              <p>{t('sunrise')}: {weather.forecast.forecastday[0].astro.sunrise}</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-center col-span-2 shadow-lg">
+              <p className="font-semibold">{t('sunrise')}: {weather.forecast.forecastday[0].astro.sunrise}</p>
               <p>{t('sunset')}: {weather.forecast.forecastday[0].astro.sunset}</p>
             </div>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-2xl mb-4">{t('day_forecast')}</h3>
-            <div className="grid grid-cols-3 gap-4">
+          <div className="mt-8 w-full">
+            <h3 className="text-2xl w-full font-semibold mb-4">{t('day_forecast')}</h3>
+            <div className="grid grid-cols-3 gap-2">
               {weatherData.forecastday.map((day, index) => (
-                <div key={index} className="bg-gray-500 p-4 rounded text-center">
-                  <p>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
-                  <img className="mx-auto mt-2" src={day.day.condition.icon} alt="Forecast Icon" />
-                  <p>{day.day.avgtemp_c}°C</p>
+                <div key={index} className="bg-gray-800 p-2 rounded-lg w-full text-center shadow-lg">
+                  <p className="font-semibold">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                  <img className="mx-auto w-20 h-20 mt-3" src={day.day.condition.icon} alt="Forecast Icon" />
+                  <p className="text-2xl font-bold">{day.day.avgtemp_c}°C</p>
                 </div>
               ))}
             </div>
