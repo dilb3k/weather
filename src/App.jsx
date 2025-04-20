@@ -598,7 +598,7 @@ function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
             >
-              <h3 className="text-2xl w-full font-semibold mb-4">7-day</h3>
+              <h3 className="text-2xl w-full font-semibold mb-4">{t('day_forecast')}</h3>
               <div className="grid grid-cols-3 gap-3">
                 {weatherData.forecastday.map((day, index) => (
                   <motion.div

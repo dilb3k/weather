@@ -8,7 +8,7 @@
     "sunrise": "Sunrise",
     "sunset": "Sunset",
     "hourly_forecast": "Hourly Forecast for Today",
-    "day_forecast": "3-Day Forecast",
+    "day_forecast": "7-Day Forecast",
     "enter_city": "Enter city",
     "get_weather": "Get Weather",
     "please_enter_city": "Please enter a city to get weather information."
