@@ -11,16 +11,17 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 function App() {
   const { t, i18n } = useTranslation();
-  const [city, setCity] = useState('Tashkent');
+  const [cityInput, setCityInput] = useState('Tashkent'); // Input field state
+  const [searchCity, setSearchCity] = useState('Tashkent'); // Actual search term
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [theme, setTheme] = useState('dark');
-  const [coordinates, setCoordinates] = useState({ lat: 41.3111, lon: 69.2797 }); // Default to Tashkent
+  const [coordinates, setCoordinates] = useState({ lat: 41.3111, lon: 69.2797 });
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
 
-  // 3D Scene setup (same as before)
+  // 3D Scene setup
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -51,15 +52,17 @@ function App() {
     }
 
     particleGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
     const particleMaterial = new THREE.PointsMaterial({
       size: 0.05,
-      color: weather?.current?.weathercode?.includes('rain') ? 0x5599ff :
-        weather?.current?.weathercode?.includes('sun') ? 0xffdd00 : 0xffffff,
+      color: [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(weather?.current?.weather_code) ? 0x5599ff : // rain codes
+        [0, 1].includes(weather?.current?.weather_code) ? 0xffdd00 : // sunny/clear codes
+          0xffffff,
       transparent: true,
       opacity: 0.8,
       blending: THREE.AdditiveBlending
     });
+
+   
 
     const particleMesh = new THREE.Points(particleGeometry, particleMaterial);
     scene.add(particleMesh);
@@ -73,10 +76,6 @@ function App() {
 
     const animate = () => {
       requestAnimationFrame(animate);
-
-      particleMesh.rotation.x += 0.0005;
-      particleMesh.rotation.y += 0.0005;
-
       controls.update();
       renderer.render(scene, camera);
     };
@@ -99,20 +98,27 @@ function App() {
     };
   }, [weather]);
 
-  // Fetch coordinates first, then weather
+  // Fetch coordinates based on searchCity state, not the city input
   useEffect(() => {
-    if (city) {
-      fetchCoordinates(city);
+    if (searchCity) {
+      fetchCoordinates(searchCity);
     }
-  }, [city]);
+  }, [searchCity]);
 
+  // Fetch weather when coordinates change
   useEffect(() => {
     if (coordinates.lat && coordinates.lon) {
       fetchWeather(coordinates.lat, coordinates.lon);
     }
   }, [coordinates]);
 
-  // Get coordinates from city name using Open-Meteo geocoding
+  // This effect will run once when component mounts to load initial data
+  useEffect(() => {
+    if (searchCity) {
+      fetchCoordinates(searchCity);
+    }
+  }, []);
+
   const fetchCoordinates = async (cityName) => {
     setLoading(true);
     setError(null);
@@ -128,7 +134,7 @@ function App() {
         const { latitude, longitude, name, country, admin1 } = result.results[0];
         setCoordinates({ lat: latitude, lon: longitude });
 
-        // Set location data immediately since Open-Meteo doesn't return it in weather response
+        // Set location data immediately
         setWeather(prev => ({
           ...prev,
           location: {
@@ -148,7 +154,6 @@ function App() {
     }
   };
 
-  // Fetch weather data from Open-Meteo
   const fetchWeather = async (latitude, longitude) => {
     setLoading(true);
     setError(null);
@@ -163,9 +168,8 @@ function App() {
       }
       const result = await response.json();
 
-      // Transform Open-Meteo data to match our expected format
       const transformedData = transformWeatherData(result);
-      
+
       setWeather(prev => ({
         ...prev,
         ...transformedData
@@ -178,9 +182,7 @@ function App() {
     }
   };
 
-  // Transform Open-Meteo data to match our component's expected format
   const transformWeatherData = (data) => {
-    // Weather code mapping
     const weatherCodeMap = {
       0: { text: 'Clear sky', icon: '☀️' },
       1: { text: 'Mainly clear', icon: '🌤️' },
@@ -221,13 +223,14 @@ function App() {
     const currentHour = now.getHours();
 
     for (let i = 0; i < 24; i++) {
-      const hourIndex = (currentHour + i) % 24;
+      const hourIndex = currentHour + i;
+      const adjustedIndex = hourIndex >= 24 ? hourIndex - 24 : hourIndex;
       hourlyForecast.push({
-        time: new Date(now.setHours(hourIndex, 0, 0, 0)).toISOString(),
-        temp_c: data.hourly.temperature_2m[hourIndex],
+        time: new Date(now.getFullYear(), now.getMonth(), now.getDate(), adjustedIndex, 0, 0).toISOString(),
+        temp_c: data.hourly.temperature_2m[adjustedIndex],
         condition: {
-          text: weatherCodeMap[data.hourly.weather_code[hourIndex]].text,
-          icon: weatherCodeMap[data.hourly.weather_code[hourIndex]].icon
+          text: weatherCodeMap[data.hourly.weather_code[adjustedIndex]]?.text || 'Unknown',
+          icon: weatherCodeMap[data.hourly.weather_code[adjustedIndex]]?.icon || '❓'
         }
       });
     }
@@ -238,13 +241,13 @@ function App() {
       day: {
         avgtemp_c: (data.daily.temperature_2m_max[index] + data.daily.temperature_2m_min[index]) / 2,
         condition: {
-          text: weatherCodeMap[data.daily.weather_code[index]].text,
-          icon: weatherCodeMap[data.daily.weather_code[index]].icon
+          text: weatherCodeMap[data.daily.weather_code[index]]?.text || 'Unknown',
+          icon: weatherCodeMap[data.daily.weather_code[index]]?.icon || '❓'
         }
       },
       astro: {
-        sunrise: data.daily.sunrise[index].split('T')[1],
-        sunset: data.daily.sunset[index].split('T')[1]
+        sunrise: data.daily.sunrise[index]?.split('T')[1] || '06:00',
+        sunset: data.daily.sunset[index]?.split('T')[1] || '18:00'
       }
     }));
 
@@ -255,6 +258,7 @@ function App() {
           text: currentWeather.text,
           icon: currentWeather.icon
         },
+        weather_code: data.current.weather_code,
         wind_kph: data.current.wind_speed_10m,
         humidity: data.current.relative_humidity_2m,
         pressure_mb: data.current.pressure_msl,
@@ -268,15 +272,14 @@ function App() {
     };
   };
 
-  const handleClick = () => {
-    if (city) {
-      fetchCoordinates(city);
+  // Search only when clicking button or pressing Enter
+  const handleSearch = () => {
+    if (cityInput.trim()) {
+      setSearchCity(cityInput);
     }
   };
 
-  // Rest of the component remains the same...
   const slickSettings = useMemo(() => ({
-    dots: true,
     infinite: true,
     speed: 500,
     slidesToShow: 3,
@@ -314,10 +317,10 @@ function App() {
       temperature: weather.current.temp_c,
       condition: weather.current.condition,
       forecastday: weather.forecast?.forecastday || [],
-      hourly: weather.hourly_forecast || []
+      hourly: weather.hourly_forecast || [],
+      current: weather.current
     };
   }, [weather]);
-  
 
   const tempAnimation = useSpring({
     number: weatherData ? weatherData.temperature : 0,
@@ -326,11 +329,11 @@ function App() {
   });
 
   const getBackgroundGradient = () => {
-    if (!weather) return 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364)';
+    if (!weatherData) return 'linear-gradient(to bottom, #0f2027, #203a43, #2c5364)';
 
     const hours = new Date().getHours();
-    const condition = weather.current.condition.text.toLowerCase();
-    const isDay = weather.current.is_day;
+    const condition = weatherData.condition?.text?.toLowerCase() || 'clear';
+    const isDay = weatherData.current?.is_day || true;
 
     if (isDay) {
       if (condition.includes('cloud')) {
@@ -448,18 +451,18 @@ function App() {
               <input
                 type="text"
                 placeholder={t('enter_city')}
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    handleClick();
+                    handleSearch();
                   }
                 }}
                 className={`p-3 rounded-l-full ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-400 border-none`}
                 style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}
               />
               <motion.button
-                onClick={handleClick}
+                onClick={handleSearch}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="p-3 rounded-r-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
@@ -467,7 +470,6 @@ function App() {
                 🔍
               </motion.button>
             </motion.div>
-
 
             <motion.h2
               className="text-4xl font-extrabold mt-4 bg-clip-text text-transparent"
@@ -495,7 +497,7 @@ function App() {
             </motion.div>
           </div>
 
-          {weatherData.hourly.length > 0 ? (
+          {weatherData.hourly.length > 0 && (
             <motion.div
               className="mt-8"
               initial={{ opacity: 0, y: 20 }}
@@ -529,7 +531,7 @@ function App() {
                 </Slider>
               </div>
             </motion.div>
-          ) : null}
+          )}
 
           <motion.div
             className="mt-8 grid grid-cols-2 gap-4"
@@ -538,10 +540,10 @@ function App() {
             transition={{ delay: 0.5 }}
           >
             {[
-              { label: t('wind_speed'), value: `${weather.current.wind_kph} kph`, icon: '💨' },
-              { label: t('humidity'), value: `${weather.current.humidity}%`, icon: '💧' },
-              { label: t('pressure'), value: `${weather.current.pressure_mb} hPa`, icon: '🔄' },
-              { label: t('uv_index'), value: weather.current.uv, icon: '☀️' },
+              { label: t('wind_speed'), value: `${weatherData.current.wind_kph} kph`, icon: '💨' },
+              { label: t('humidity'), value: `${weatherData.current.humidity}%`, icon: '💧' },
+              { label: t('pressure'), value: `${weatherData.current.pressure_mb} hPa`, icon: '🔄' },
+              { label: t('uv_index'), value: weatherData.current.uv, icon: '☀️' },
             ].map((item, index) => (
               <motion.div
                 key={index}
@@ -564,7 +566,7 @@ function App() {
 
             <motion.div
               whileHover={{ scale: 1.03 }}
-              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-4 rounded-xl text-center col-span-2 shadow-lg`}
+              className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-4 rounded-xl col-span-2 shadow-lg`}
               style={{
                 background: theme === 'dark'
                   ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9))'
@@ -578,47 +580,50 @@ function App() {
                 <div>
                   <p className="text-3xl mb-1">🌅</p>
                   <p className="font-semibold">{t('sunrise')}</p>
-                  <p className="text-xl font-bold">{weather.forecast.forecastday[0].astro.sunrise}</p>
+                  <p className="text-xl font-bold">{weatherData.forecastday[0]?.astro?.sunrise || '06:00'}</p>
                 </div>
                 <div>
                   <p className="text-3xl mb-1">🌇</p>
                   <p className="font-semibold">{t('sunset')}</p>
-                  <p className="text-xl font-bold">{weather.forecast.forecastday[0].astro.sunset}</p>
+                  <p className="text-xl font-bold">{weatherData.forecastday[0]?.astro?.sunset || '18:00'}</p>
                 </div>
               </div>
             </motion.div>
           </motion.div>
 
-          <motion.div
-            className="mt-8 w-full"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <h3 className="text-2xl w-full font-semibold mb-4">{t('day_forecast')}</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {weatherData.forecastday.map((day, index) => (
-                <motion.div
-                  key={index}
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-4 rounded-xl w-full text-center shadow-lg transform transition-all duration-300`}
-                  style={{
-                    background: theme === 'dark'
-                      ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9))'
-                      : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.9))',
-                    backdropFilter: 'blur(5px)',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
-                  }}
-                >
-                  <p className="font-semibold">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
-                  <p className="text-3xl">{day.day.condition.icon}</p>
-                  <p className="text-sm font-bold">{day.day.avgtemp_c}°C</p>
-                  <p className="text-sm mt-1">{day.day.condition.text}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+          {weatherData.forecastday.length > 0 && (
+            <motion.div
+              className="mt-8 w-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <h3 className="text-2xl w-full font-semibold mb-4">7-day</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {weatherData.forecastday.map((day, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-4 rounded-xl w-full text-center shadow-lg transform transition-all duration-300`}
+                    style={{
+                      background: theme === 'dark'
+                        ? 'linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9))'
+                        : 'linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.9))',
+                      backdropFilter: 'blur(5px)',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    <p className="font-semibold">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                    <p className="text-3xl">{day.day.condition.icon}</p>
+                    <p className="text-sm font-bold">{Math.round(day.day.avgtemp_c)}°C</p>
+
+                    <p className="text-sm mt-1">{day.day.condition.text}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       ) : (
         <motion.p
